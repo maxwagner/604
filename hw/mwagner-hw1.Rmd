@@ -1,0 +1,163 @@
+---
+title: "Homework 1"
+author: "Max Wagner"
+date: "February 14, 2015"
+output:
+  pdf_document: default
+  html_document:
+    highlight: espresso
+    theme: flatly
+  word_document: default
+---
+***
+
+####1.1
+
+a. system: cafe, entities: customers, attributes: checking-account balance, activities: buying lunch, events: arrival/departure/eating, state variables: number of cashiers/number of customers
+
+b. system: grocery store, entities: customers/cashiers, attributes: checking-account balance, activities: buying groceries, events: checking out, state variables: number of cashiers/number of customers
+
+c. system: laundromat, entities: machines/customers, attributes: cost/money, activities: doing laundry, events: start/stop cycle, state variables: number of machines/number of customers/machine status
+
+d. system: fast food restaurant, entities: customers/cashiers, attributes: money, activities: buying fast-food, eating, events: checking out, state variables: number of cashiers/number of customers/number of empty tables
+
+e. system: ER, entities: doctors/patients, attributes: injuries, activities: healing injuries, events: taking medicine, state variables: number of doctors/number of patients/empty rooms
+
+f. system: taxi company, entities: customers/taxis/drivers, attributes: origin/destination, activities: riding in a taxi, events: arriving/leaving, state variables: number of fairs in an hour
+
+g. system: auto assembly line, entities: machines, attributes: speed/accuracy/precision, activities: making a door, events: welding/bolting, state variables: number of doors made
+
+
+####2.1
+
+The code below sets up the sheet for the problem.
+
+```{r}
+########################Initial Parameters#######################
+set.seed(1234)
+n=12  #should be 12 by the problem...
+#################################################################
+
+##################Set Up Interarrival Times######################
+ia=rep(0,n) #initialize array for interarrival time (pmf)
+s=c(rep(0,230),rep(60,370),rep(120,280),rep(180,120)) #pmf
+ia[1]=0
+ia[2]=0
+ia[3:n]=sample(s,n-3+1,replace=T)
+#################################################################
+
+#######################Calculate Arrival Time####################
+ac=rep(0,n) #initialize array for arrival time (arrival clock)
+ac[1:2]=0
+for (i in 3:n){ac[i]=ac[i-1]+ia[i]}   
+#################################################################
+
+#######################Calculate Service Time####################
+st=rnorm(n,50,8) #normal distrribution
+sb=rep(0,n)  #time service begins
+se=rep(0,n)  #time service ends
+sb[1]=0
+sb[2]=25
+se[1]=25
+se[2]=75
+for (i in 3:n){sb[i]=max(sb[i-1]+st[i-1], ac[i])}
+se[3:n]=sb[3:n]+st[3:n]
+#################################################################
+
+#######################Calculate OtherTimes######################
+wt=se-ac  #wait time
+it=rep(0,n)
+it[1]=0
+for (i in 2:n){it[i]=max(0,ac[i]-se[i-1])}
+a=seq(1:n)
+#################################################################
+
+
+#######################Make it Pretty############################
+mydata=data.frame(cbind(a,ia,ac,st,sb,wt,se,it))
+plot(wt~ac, main="Queue Time by Hour", col="red", xlab="Hour", 
+ylab="Wait Time", type="l")
+write.csv(mydata, "output.csv")
+#################################################################
+```
+
+a. Average time in the queue:
+```{r}
+mean(wt)
+```
+
+b. Average processing time:
+```{r}
+mean(se-sb)
+```
+
+c. Max time in the system:
+```{r}
+max(wt)
+```
+
+####2.2
+
+A little prework below lets us know that we should bake at least 20 dozen a day.
+
+```{r}
+nc <- .35 * 8 + .30 * 10 + .25 * 12 + .10 * 14 # number of customers
+do <- .4 * 1 + .3 * 2 + .2 * 3 + .1 * 4 # dozens ordered
+tot <- nc * do;tot
+```
+
+profit = rev from sales - cost of bagels + rev from grocery sales - cost of bagels
+
+profit = 8.4S - 5.8Q + 4.2(Q-S) - 5.8(Q-S)
+
+```{r}
+set.seed(1234)
+n=5
+cust=rep(0,n)
+s=c(rep(8,35),rep(10,30),rep(12,25),rep(14,10)) #customers
+cust[1:n]=sample(s,n,replace=T)
+
+doz=rep(0,n)
+s=c(rep(1,4),rep(2,3),rep(3,2),rep(4,1)) #dozens
+doz[1:n]=sample(s,n,replace=T)
+
+q <- cust*doz #total dozens
+profit <- 8.4-5.8
+profitG <- 8.4/2 - 5.8
+```
+
+![output](http://puu.sh/n7ZLR/e424c68342.png)
+
+It's hard to say with only 5 days of simulation, but from the above excel sheet we can see that making 30-35 bagels seems to be optimal.
+
+####2.4
+
+Some of the excel for day 1 of 5 with 1 taxi. All 5 days in total lead to an average wait time of 9.95 minutes per customer, and a average idle time of 5.36 minutes between customers. I am unsure how to do the 2 cab simulation.
+
+![output](http://puu.sh/n8ru4/f52c61a9de.png)
+
+####2.5
+
+The equation is summarized below:
+
+```{r}
+x <- rnorm(50, 100, sqrt(100))
+y <- rnorm(50, 300, sqrt(225))
+z <- rnorm(50, 40, sqrt(64))
+w <- (x + y) / z
+hist(w, breaks = seq(3,21,by=3))
+```
+
+####2.7
+
+There were 7 lost orders according to the below spreadsheet, which comes out to 1.4 orders lost per week.
+
+```{r}
+data <- cbind(1:25, round(rnorm(25,5,1.5)))
+write.csv(data, "output.csv")
+```
+
+![output](http://puu.sh/n84MF/4ae5598cda.png)
+
+####2.8
+
