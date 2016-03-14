@@ -1,0 +1,179 @@
+---
+title: "Homework 2"
+author: "Max Wagner"
+date: "February 20, 2015"
+output:
+  pdf_document: default
+  html_document:
+    highlight: espresso
+    theme: flatly
+  word_document: default
+---
+***
+
+####1.
+
+$$ c*1^{2} + c*2^{2} + c*3^{2} = 1 $$
+$$ c = 1/14 $$
+
+$$ Pr(X \leq 2) = \frac{1}{14} + \frac{1}{14} * 2^{2} $$
+$$ Pr(X \leq 2) = 5/14 $$
+
+So...
+$$ Pr(X = 3) = 9/14 $$
+
+And then...
+$$ E[X] = Pr(X=1) + 2(Pr(X=2)) + 3(Pr(X=3)) $$
+$$ E[X] = 36/14 $$
+
+And then plugging in a lot to this...
+$$ Var(X) = \Sigma Pr(X=k)(x-\mu)^{2} $$
+$$ Var(X) = 0.3877551 $$
+
+####2.
+
+$$ \int_1^2 cx^2 = 1 $$
+$$ \int cx^2 dx = \frac{1}{3} cx^3 $$
+$$ \frac{1}{3} c(2)^3 - \frac{1}{3} c(1)^3 = 1$$
+$$ c = \frac{3}{7} $$
+
+And now E[X]...
+$$ E[X] = \int_1^2 \frac{3}{7} x^3 $$
+$$ E[X] = \frac{3x^4}{28}$$
+
+Solving for...
+$$ (1 \leq x \leq 2) $$
+$$ E[X] = 1.607143 $$
+
+And for Var(X)...
+$$ Var(X) = \int_1^2 x^2 f(x)dx - \mu_2 $$
+$$ E(X^2) = \int_1^2 cx^4 dx $$
+$$ E(X^2) = c \frac{1}{5} x^5 $$
+
+Solving for...
+$$ (1 \leq x \leq 2) $$
+$$ Var(X) = -1.09898 $$
+
+####3.
+
+a.
+
+For X:
+$$ f_x (x) = \int_1^2 (y-x) dy $$
+$$ f_x (x) = \frac{3}{2} - x $$
+
+```{r}
+library(ggplot2)
+x <- seq(0, 1, by = 0.05)
+fx <- (3/2) - x
+x.graph <- data.frame(cbind(x,fx))
+ggplot(data = x.graph, aes(x = x, y=fx)) + geom_line()
+```
+
+For Y:
+$$ f_y (y) = \int_0^1 (y-x) dx $$
+$$ f_x (x) = y - \frac{1}{2} $$
+
+```{r}
+y <- seq(1, 2, by = 0.05)
+fy <- y - (1/2)
+y.graph <- data.frame(cbind(y,fy))
+ggplot(data = y.graph, aes(x = y, y=fy)) + geom_line()
+```
+
+b. In this case $ f(x,y) != f(x)f(y) $, so X and Y are not independent.
+
+c. 
+
+$$ F_x (x) = \int_{-\infty}^x f_x (t) dt $$
+$$ F_x (x) = \frac{3x}{2} - \frac{x^2}{2} $$
+
+$$ F_y (y) = \int{-\infty}^y f_y (t) dt $$
+$$ F_y (y) = \frac{y^2}{2} - \frac{y}{2} $$
+
+d.
+
+E[X]:
+$$ E[X] = \int_0^1 \frac{3x}{2} - x^2 $$
+$$ E[X] = \frac{3x^2}{4} - \frac{x^3}{3} $$
+$$ E[X] = 0.4166667 $$
+
+Var(X):
+$$ Var(X) = \int x^2 (\frac{3}{2} - x) $$
+$$ Var(X) = \frac{x^3}{2} - \frac{x^4}{4} $$
+$$ Var(X) = 0.07638889
+
+E[Y]:
+$$ E[Y] = \int_1^2 y^2 - \frac{y}{2} $$
+$$ E[Y] = \frac{y^3}{3} - \frac{y^2}{4} $$
+$$ E[Y] = 1.583333 $$
+
+Var(Y):
+$$ Var(Y) = \int y^3 - \frac{y^2}{2} $$
+$$ Var(Y) = \frac{y^4}{4} - \frac{y^3}{6} $$
+$$ Var(Y) = 0.07638889 $$
+
+Not overly sure how to do covariance or correlation here. Something like E[XY] - E[x]E[Y].
+
+####4.
+
+.
+
+```{r}
+obs <- c(7.3,6.1,3.8,8.4,6.9,7.1,5.3,8.2,4.9,5.8)
+mean <- mean(obs);mean
+s2 <- var(obs);s2 #population var
+s2b <- sum((obs - mean)^2 / length(obs)); s2b #sample var
+ci <- 2.16 * (sqrt(s2b) / sqrt(length(obs)));ci # +/- of ci
+```
+
+####5.
+
+$$ Pr(x > s) = e^{-s \lambda} $$ 
+and 
+$$ Pr(X > t) = e^{-t \lambda} $$
+to get...
+$$ Pr(x > t + s) = e^{-s \lambda - t \lambda} $$
+
+With some elimination...
+$$ \frac{e^{-s \lambda - t \lambda}}{e^{-t \lambda}} = e^{-s \lambda} $$
+
+####6.
+
+The central limit theorem says that the means for all the cases the function produces will be normally distributed around an expected value. Also, one value should not affect the others.
+
+```{r}
+x <- exp(-1) - exp(-1.1);x
+```
+
+vs
+
+```{r}
+x <- exp(-100) - exp(-110);x
+```
+
+but the xbar will remain the same in the population.
+
+####5.13
+
+a.
+$$ \mu = \frac{1}{n+1} \frac{n(n+1)}{2} = \frac{n}{2} $$
+$$ Var(x) = \frac{1}{n+1} \frac{n(n+1)(2n+1)}{6} = \frac{n(2n+1)}{6} $$
+
+b. Need to plug some things in, not overly sure where.
+
+####5.14
+
+a.
+$$ e^{-5(.4)} = 0.1353353 $$
+
+b.
+$$ e^{-3(.4)} - e^{-5(.4)} = 0.1658589 $$
+
+####5.39
+
+a. (150, 0.25)
+
+b. The Z-score gives a value of .4, which gives a probability of 0.34.
+
+c. The two values give z-scores of -.34 and .42, which give and in between value of 0.2959.

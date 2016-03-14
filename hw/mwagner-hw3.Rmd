@@ -1,0 +1,218 @@
+---
+title: "Homework 3"
+author: "Max Wagner"
+date: "March 7, 2016"
+output:
+  pdf_document: default
+  html_document:
+    highlight: espresso
+    theme: flatly
+  word_document: default
+---
+***
+
+####1.
+
+The cycle repeats 4 numbers continuously.
+
+```{r}
+x <- 1
+for(i in 1:25)
+  x <- c(x, (11 * tail(x, 1)) %% 16)
+x
+```
+
+####2.
+
+***
+
+From the 4 examples, we can see that when the when the cycle reaches 0, it immeadiatly returns to 12. When a higher number like 1000 is entered, it immeadiately decreases to 11 or lower.
+```{r}
+x <- 0
+for(i in 1:25)
+  x <- c(x, (tail(x, 1) + 12) %% 13)
+x
+
+x <- 50
+for(i in 1:25)
+  x <- c(x, (tail(x, 1) + 12) %% 13)
+x
+
+x <- 100
+for(i in 1:25)
+  x <- c(x, (tail(x, 1) + 12) %% 13)
+x
+
+x <- 1000
+for(i in 1:25)
+  x <- c(x, (tail(x, 1) + 12) %% 13)
+x
+```
+
+***
+
+####3.
+
+.
+
+```{r, warning=FALSE}
+x <- 1234567
+r <- 1234567 / (2^31 - 1)
+
+for(i in 1:99999) {
+  x <- c(x, (16807 * tail(x, 1)) %% (2^31 - 1))
+  r <- c(r, tail(x, 1) / (2^31 - 1))
+}
+
+tbl <- data.frame(x, r)
+chisq.test(tbl)
+```
+
+The above is almost certainly wrong from the looks of it, not sure what to change here. Let's try runs. Trying this with a package I found.
+
+```{r}
+library(randtests)
+runs.test(r)
+```
+
+***
+
+####4.
+
+.
+
+***
+
+####5.
+
+a. First with inverse-normal:
+
+```{r}
+normrandit <- function(){
+  U <- runif(1)
+  return(qnorm(U))
+}
+
+itstats <- function(N){
+  x <- numeric(0)
+  for(i in 1:N){
+    x <- c(x,normrandit())
+  }
+  return(list(mean=mean(x), sd=sd(x)))
+}
+```
+
+b. Now with Muller:
+
+```{r}
+normrandbm <- function(){
+  U <- runif(2)
+  x <- ((-2*log(U[1]))^(1/2))*cos(2*pi*U[2])
+  y <- ((-2*log(U[1]))^(1/2))*sin(2*pi*U[2])
+  return(c(x=x, y=y))
+}
+
+bmstats <- function(N){
+  x <- numeric(0)
+  for(i in 1:N){
+    x <- c(x,normrandbm())
+  }
+  return(list(mean=mean(x), sd=sd(x)))
+}
+```
+
+c. Finally with accept/reject
+
+```{r}
+normrandar <- function(){
+  repeat{
+    U <- runif(2)
+    x <- -log(U[1])
+    y <- -log(U[2])
+    if(y >= ((x-1)^2)/2){
+      break
+    }
+  }
+  if (runif(1) >= .5)
+    x <- -1 * x
+  return(x)
+}
+
+arstats <- function(N){
+  x <- numeric()
+  for(i in 1:N){
+    x <- c(x,normrandar())
+  }
+  return(list(mean=mean(x), sd=sd(x)))
+}
+```
+
+d. Let's check the means, sd's, and runtimes
+
+```{r,eval=FALSE}
+library(plyr)
+means <- data.frame(it=c(), bm=c(), ar=c())
+sds <- data.frame(it=c(), bm=c(), ar=c())
+times <- data.frame(it=c(), bm=c(), ar=c())
+
+for (n in c(100, 1000, 10000, 100000)) {
+  for (i in 1:10) {
+  it <- itstats(n)
+  bm <- bmstats(n)
+  ar <- arstats(n)
+  means <- rbind(means, c(it$mean, bm$mean, ar$mean, n))
+  sds <- rbind(sds, c(it$sd, bm$sd, ar$sd, n))
+  times <- rbind(times, c(system.time(itstats(n))[[3]], system.time(itstats(n))[[3]], system.time(itstats(n))[[3]], n))
+  }
+}
+
+colnames(means) <- c("it","bm","ar","n")
+colnames(sds) <- c("it","bm","ar","n")
+colnames(times) <- c("it","bm","ar","n")
+```
+
+```{r}
+library(plyr)
+means <- read.csv("means.csv")
+sds <- read.csv("sds.csv")
+times <- read.csv("times.csv")
+mean_avgs <- ddply(means, ~n, summarise, mean_it = mean(it), mean_bm = mean(bm), mean_ar = mean(ar));mean_avgs
+sd_avgs <- ddply(sds, ~n, summarise, mean_it = mean(it), mean_bm = mean(bm), mean_ar = mean(ar));sd_avgs
+times_avgs <- ddply(times, ~n, summarise, mean_it = mean(it), mean_bm = mean(bm), mean_ar = mean(ar));times_avgs
+```
+
+***
+
+####6.
+
+a. and b. We don't really need to use the method of 1 or 0 to estimate pi, it should estimate fine without checking, and will not give a "4" when a lower N value is given
+
+```{r}
+estimatepi <- function(N){
+  x <- runif(N)
+  y <- runif(N)
+  d <- sqrt(x^2 + y^2)
+  pi <- (4 * sum(d < 1.0) / N)
+  se <- sd(d) / sqrt(length(d))
+  ci <- qnorm(0.95)*sd(d)/sqrt(N)
+  return(list(pi=pi, se=se, ci=ci))
+}
+```
+
+c. Let's check how large N needs to be for the estimate to be accurate to 0.1
+
+```{r}
+values <- data.frame(pi=c(),se=c(),ci=c())
+x <- seq(1000,10000,by=500)
+for (n in x) {
+    values <- rbind(values, estimatepi(n))
+}
+rownames(values) <- seq(1000,10000,by=500)
+
+values$lower <- 3.14 - values$ci
+values$upper <- 3.14 + values$ci
+values$interval <- values$upper - values$lower
+values
+```
+
+If I believe the values above are correct, at N = 1000 the error is already small enough to be within 0.1.
