@@ -1,0 +1,46 @@
+---
+title: "Homework 7"
+author: "Max Wagner"
+date: "May 5, 2016"
+output:
+  pdf_document: default
+  html_document:
+    highlight: espresso
+    theme: flatly
+  word_document: default
+---
+Did two of them at least.
+
+9.14
+
+```{r}
+atoa <- c(88.3,40.7,36.3,27.3,36.8,91.7,67.3,7,45.2,23.3,98.8,90.1,17.2,23.7,97.4,32.4,87.8,69.8,62.6,99.7,20.6,73.1,21.6,6,45.3,76.6,73.2,27.3,87.6,87.2)
+d1 <- max((1:length((atoa/100))) / length((atoa/100)) - (atoa/100))
+d2 <- max((atoa/100) - ((1:length(atoa/100)) - 1) / length(atoa/100))
+d1;d2
+```
+
+The larger of the above is correct. In either case, the number is larger than the critical value, so we can reject that the accidents are uniformally distributed.
+
+10.1
+
+a.
+
+null: mu = 22.5 jobs
+
+alt: mu != 22.5 jobs
+
+```{r}
+times <- c(18.9,22,19.4,22.1,19.8,21.9,20.2)
+mu <- 22.5
+t2 <- t.test(times, mu = mu)
+t2[1]$statistic
+```
+
+A negative here means we can do this...
+
+```{r}
+qt(.025,length(times)-1)
+```
+
+Yay we can reject the null.

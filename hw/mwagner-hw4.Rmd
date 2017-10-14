@@ -1,0 +1,285 @@
+---
+title: "Homework 5"
+author: "Max Wagner"
+date: "April 2, 2016"
+output:
+  pdf_document: default
+  html_document:
+    highlight: espresso
+    theme: flatly
+  word_document: default
+---
+***
+
+Before anything else, I'll write out a function that performs the cost function, and returns.
+
+```{r}
+cost <- function(x, D) {
+  cx <- (1 / ((2*pi) ^ (D/2))) * exp((-.5) * (t(x) %*% x))
+  return (cx)
+}
+```
+
+##a. Crude Monte Carlo
+
+Again, I'll start with a function that calculates this so I don't have to. It makes a matrix with the D x n dimensions and uses the `cost` function on the columns.
+
+```{r}
+crudemonte <- function(n, D) {
+  dims <- n * D
+  nums <- runif(dims, -5, 5)
+  mtx <- matrix(nums, nrow = n)
+  return(mean(apply(mtx, 1, cost, D = D)))
+}
+```
+
+And now a function to create a table...
+
+```{r}
+crudemontetable <- function(D) {
+  samps <- seq(1000, 10000, by = 1000) # says 100 times, this only gives 10
+  means <- c() # make some empty things to store in later
+  stds <- c()
+  cvs <- c()
+  
+  for (samp in samps) { # loop to get all the samples
+    cx <- replicate(100, crudemonte(samp, D))
+    means <- c(means, mean(cx))
+    stds <- c(stds, sd(cx))
+    cvs <- c(cvs, mean(cx)/sd(cx))
+  }
+  return (data.frame(samples = samps, means = means, std.dev = stds, coef.vars = cvs, D = D, method = "Crude Monte"))
+}
+```
+
+And finally lets simulate it. I'll save this to a csv so it doesn't take years to run everytime. Doing this for D = 1 and D = 2
+
+```{r, eval=FALSE}
+write.csv(crudemontetable(1), file = "crudemonte.csv")
+write.csv(crudemontetable(2), file = "crudemonte2.csv")
+```
+
+```{r}
+cm1 <- read.csv("crudemonte.csv")
+cm2 <- read.csv("crudemonte2.csv")
+cm1;cm2
+```
+
+And now for some graphs about the means and sds for both D = 1 and D = 2. In this case both graphs for the means and both graphs for the sd's were fairly similar with no large differences.
+
+```{r}
+library(ggplot2)
+qplot(cm1$samples,cm1$means, geom = "line") + geom_hline(yintercept = (1/10))
+qplot(cm1$samples,cm1$std.dev, geom = "line")
+qplot(cm2$samples,cm2$means, geom = "line") + geom_hline(yintercept = (1/10)^2)
+qplot(cm2$samples,cm2$std.dev, geom = "line")
+```
+
+##b. Quasi Random Numbers
+
+I have an idea how the Sobol numbers work, but I have zero idea of how to code it, looking forward to seeing the answers for this week.
+
+##c. Antithetic Variates
+
+The first function generates samples, sort of ripped from the montecarlo section, but with a few extra steps for splitting into fx1 and fx2.
+
+```{r}
+anti <- function(n, D) {
+  dims <- n * D
+  nums <- runif(dims/2)
+  mtx1 <- matrix(nums, nrow = dims/2)
+  mtx1 <- (mtx1 - .5) * 10
+  mtx2 <- 1 - mtx1
+  fx1 <- apply(mtx1, 1, cost, D = D)
+  fx2 <- apply(mtx2, 1, cost, D = D)
+  return((fx1 + fx2) / 2)
+}
+```
+
+The second function creates a table with the info for the simulation and plots.
+
+```{r}
+antitable <- function(D) {
+  samps <- seq(1000, 10000, by = 1000) # says 100 times, this only gives 10
+  means <- c() # make some empty things to store in later
+  stds <- c()
+  cvs <- c()
+  
+  for (samp in samps) { # loop to get all the samples
+    cx <- replicate(100, anti(samp, D))
+    means <- c(means, mean(cx))
+    stds <- c(stds, sd(cx))
+    cvs <- c(cvs, mean(cx)/sd(cx))
+  }
+  return (data.frame(samples = samps, means = means, std.dev = stds, coef.vars = cvs, D = D, method = "Antithetic"))
+}
+```
+
+Again, I'll write these to csv's to reduce load time later on.
+
+```{r, eval=FALSE}
+write.csv(antitable(1), file = "anti.csv")
+write.csv(antitable(2), file = "anti2.csv")
+```
+
+```{r}
+anti1 <- read.csv("anti.csv")
+anti2 <- read.csv("anti2.csv")
+anti1;anti2
+```
+
+And now for the graphs of the means and sds. The D = 2 graph for means has something wrong with it, as the estimation for the mean is far too high. Not sure why. The std's are higher than in the monte carlo method above.
+
+```{r}
+qplot(anti1$samples,anti1$means, geom = "line")  + geom_hline(yintercept = (1/10))
+qplot(anti1$samples,anti1$std.dev, geom = "line")
+qplot(anti2$samples,anti2$means, geom = "line")  + geom_hline(yintercept = (1/10)^2)
+qplot(anti2$samples,anti2$std.dev, geom = "line")
+```
+
+##d. Latin Hypercubing
+
+The functions work similarily again, but with a added k value.
+
+```{r}
+latin <- function(n, D, k) {
+  dims <- n * D / k
+  mtx <- matrix(runif(dims), nrow = n/k)
+  p <- replicate(D, sample(1:(n/k)))
+  mtx <- (p + 1 - mtx) / (n/k)
+  mtx <- (v-.5) * 10
+  y <- mean(apply(v, 1, cost, D = D))
+  return(mean(replicate(k, y)))
+}
+
+latintable <- function(D) {
+  samps <- seq(1000, 10000, by = 1000) # says 100 times, this only gives 10
+  means <- c() # make some empty things to store in later
+  stds <- c()
+  cvs <- c()
+  
+  for (samp in samps) { # loop to get all the samples
+    cx <- replicate(100, anti(samp, D))
+    means <- c(means, mean(cx))
+    stds <- c(stds, sd(cx))
+    cvs <- c(cvs, mean(cx)/sd(cx))
+  }
+  return (data.frame(samples = samps, means = means, std.dev = stds, coef.vars = cvs, D = D, method = "Latin"))
+}
+```
+
+Again, I'll write these to csv's to reduce load time later on.
+
+```{r, eval=FALSE}
+write.csv(latintable(1), file = "latin.csv")
+write.csv(latintable(2), file = "latin2.csv")
+```
+
+```{r}
+latin1 <- read.csv("latin.csv")
+latin2 <- read.csv("latin2.csv")
+latin1;latin2
+```
+
+And now for graphs. From looking at the graphs, the d = 2 mean suffers from the same problem as the antithetic one did. Not sure where it's coming from. But again the std's are higher than the monte carlo method.
+
+```{r}
+qplot(latin1$samples,latin1$means, geom = "line")  + geom_hline(yintercept = (1/10))
+qplot(latin1$samples,latin1$std.dev, geom = "line")
+qplot(latin2$samples,latin2$means, geom = "line")  + geom_hline(yintercept = (1/10)^2)
+qplot(latin2$samples,latin2$std.dev, geom = "line")
+```
+
+##e. Importance Sampling
+
+Same problem as Sobol, I feel like I understand the method, but just can't get it into R.
+
+##f. Summary
+
+I'll include only the methods that I managed to do. For the 2 other methods I managed the sd was higher than in the original monte carlo. This seems blatantly wrong to me, but I'm unsure. I completely struggled with the coding for this week's assignment. I feel like I understand the ideas, but just couldn't translate it into R very well.
+
+```{r}
+table <- rbind(cm1,cm2,anti1,anti2,latin1,latin2)
+table
+qplot(cm1$samples,cm1$means, geom = "line")
+qplot(anti1$samples,anti1$means, geom = "line")
+qplot(latin1$samples,latin1$means, geom = "line")
+qplot(cm2$samples,cm2$means, geom = "line")
+qplot(anti2$samples,anti2$means, geom = "line")
+qplot(latin2$samples,latin2$means, geom = "line")
+```
+
+##6.3
+
+```{r}
+samps <- c(10,20,30,40,50)
+### this section taken from the book with some edits
+m <- 1000
+mu0 <- 500
+sigma <- 100
+mu <- c(seq(450,650,10))
+M <- length(mu)
+power <- c()
+for(samp in samps) {  
+  for(i in 1:M) {
+    mu1 <- mu[i]
+    pvalues <- replicate(m,expr={
+      x <- rnorm(samp, mean=mu1, sd=sigma)
+      ttest <- t.test(x, alternative="greater", mu=mu0)
+      ttest$p.value
+    })
+    power <- c(power,mean(pvalues<=0.05))
+  }
+}
+powers <- expand.grid(mu, samps)
+powers$power <- power
+colnames(powers) <- c("mu", "samps", "power")
+ggplot(powers, aes(x = mu, y = power, color = as.factor(samps))) + geom_line()
+```
+
+From the graph we can see that all the lines are fairly similar until a mu value of 500, and all the lines plateau at power = 1. It makes sense for the higher samples to have a steeper slope because of lower error.
+
+##6.4
+
+With unknown parameters we can assume normallity and se of $\frac{\sigma}{\sqrt{n}}$. With a random sample...
+
+```{r}
+rand <- rlnorm(100)
+mean <- mean(rand)
+sd <- sd(rand)
+se <- sd/sqrt(length(rand))
+ci <- c(mean - se, mean + se);ci
+```
+
+##7.1
+
+```{r}
+library(bootstrap)
+x <- cor(law$LSAT, law$GPA)
+rows <- nrow(law)
+jack <- numeric(rows)
+
+for(row in 1:rows) {
+  jack[row] <- cor(law$LSAT[-row],law$GPA[-row])
+}
+
+se <- sd(jack)
+bias <- (rows - 1) * (mean(jack) - x)
+se;bias
+```
+
+##7.4
+
+```{r}
+library(boot)
+x <- length(aircondit$hours) / sum(aircondit$hours)
+n <- nrow(aircondit)
+y <- numeric(50)
+
+for(i in 1:50) {
+  samp <- sample(aircondit$hours, n, replace = TRUE)
+  y[i] <- length(samp) / sum(samp)
+}
+
+mean(y);x
+```

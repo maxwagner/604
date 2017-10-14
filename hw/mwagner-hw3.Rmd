@@ -79,8 +79,60 @@ runs.test(r)
 
 ####4.
 
-.
+a. inverse-transformation
 
+Integrating the middle function gives:
+
+$$ y = \frac{x^3 + 1}{2} $$
+
+which then gives:
+
+$$ x = (2y - 1)^{\frac{1}{3}}, 0 \leq x \leq 1 $$
+
+```{r}
+#cube root fxn
+cbrt <- function(x) {
+    return(sign(x) * abs(x)^(1/3))
+}
+
+x <- runif(300)
+r <- cbrt(2*x - 1)
+hist(r)
+```
+
+The above histogram looks fairly normal.
+
+b. composition
+
+I'll split the function over the y-axis and then copy the the positive side twice, and make one of the two generations negative. This changes the function from:
+
+$$ f(x) = \frac{3x^2}{2} $$
+
+to
+
+$$ f(x) = 3x^2 $$
+
+which then makes the inverse of the CDF
+
+$$ F^{-1} (x) = (x)^{\frac{1}{3}} $$
+
+```{r}
+x <- runif(300)
+x2 <- runif(300)
+r <- x^(1/3)
+r2 <- -1 * (x^(1/3))
+hist(c(r,r2))
+```
+
+The histogram looks similar to that of part a, which is leads me to believe it is the intended outcome.
+
+c. accept-reject method
+
+First let's solve for -1 and 1 to find the edges. Plugging into
+
+$$ f(x) = \frac{3x^2}{2} $$
+
+gives 1.5 for both -1 and 1. Not overly sure where to go from here, probably pick a random variable, but I'm not sure how to solve for the equation I would sample from.
 ***
 
 ####5.
@@ -173,9 +225,9 @@ colnames(times) <- c("it","bm","ar","n")
 
 ```{r}
 library(plyr)
-means <- read.csv("means.csv")
-sds <- read.csv("sds.csv")
-times <- read.csv("times.csv")
+means <- read.csv("https://raw.githubusercontent.com/maxwagner/604/master/hw/means.csv")
+sds <- read.csv("https://raw.githubusercontent.com/maxwagner/604/master/hw/sds.csv")
+times <- read.csv("https://raw.githubusercontent.com/maxwagner/604/master/hw/times.csv")
 mean_avgs <- ddply(means, ~n, summarise, mean_it = mean(it), mean_bm = mean(bm), mean_ar = mean(ar));mean_avgs
 sd_avgs <- ddply(sds, ~n, summarise, mean_it = mean(it), mean_bm = mean(bm), mean_ar = mean(ar));sd_avgs
 times_avgs <- ddply(times, ~n, summarise, mean_it = mean(it), mean_bm = mean(bm), mean_ar = mean(ar));times_avgs
@@ -216,3 +268,26 @@ values
 ```
 
 If I believe the values above are correct, at N = 1000 the error is already small enough to be within 0.1.
+
+d.
+
+.
+
+```{r}
+pi <- c()
+for(i in 1:500){
+  pi <- c(pi, estimatepi(1000)$pi)
+}
+hist(pi)
+sd(pi)
+
+count <- 0
+for(i in 1:500) {
+  if (pi[i] >= 3.125014 & pi[1] <= 3.154986) {
+    count <- count + 1
+  }
+}
+percentage <- count/length(pi)
+```
+
+The histogram looks normal, the sd is lower than the error from above, but that makes sense. With more estimates the error should be smaller. The percentage of estimates within the interval is `r percentage*100`.

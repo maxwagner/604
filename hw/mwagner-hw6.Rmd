@@ -1,0 +1,176 @@
+---
+title: "Homework 6"
+author: "Max Wagner"
+date: "April 12, 2016"
+output:
+  pdf_document: default
+  html_document:
+    highlight: espresso
+    theme: flatly
+  word_document: default
+---
+
+My other classes put off due dates an extra week due to break, I assumed the same. Didn't mean it to be late.
+
+##1a.
+
+In this case, there is one source, 5 servers (a single clerk getting the driving history, two clerks each giving a written exam in parallel, and two checkout computers in parallel), and 1 sink.
+
+![](http://puu.sh/oxeoW/13878b8966.png)
+
+##1b.
+
+Source:
+
+Interval arrival time set to 6 minutes
+
+![](http://puu.sh/oxetg/9c842a7ec7.png)
+
+Path Source -> History:
+
+![](http://puu.sh/oxeBG/1711202a4e.png)
+
+History:
+
+A process time of 5, and a outemp2ound rule to link weight, so there is a 50/50 chance of where they go.
+
+![](http://puu.sh/oxeIf/21c87d2e0a.png)
+
+![](http://puu.sh/oxeME/2333dc649a.png)
+
+Path History -> ExamClerk:
+
+![](http://puu.sh/oxeXn/52a026d08f.png)
+
+ExamClerk 1/2:
+
+Set process time to 8.8 minutes
+
+![](http://puu.sh/oxf2i/af70d10aee.png)
+
+Path ExamClerk -> Node:
+
+![](http://puu.sh/oxfcr/6ebb55e6c9.png)
+
+Node:
+
+Again set by link weight
+
+![](http://puu.sh/oxf8X/d9a46c9a79.png)
+
+Path Node -> Checkout 1/2:
+
+![](http://puu.sh/oxfiu/3c794eeae7.png)
+
+Checkout 1/2:
+
+Process time of 9 minutes
+
+![](http://puu.sh/oxfm2/79c3983bf6.png)
+
+Path Checkout 1/2 to Sink:
+
+![](http://puu.sh/oxfpV/2108fe04ba.png)
+
+Sink:
+
+![](http://puu.sh/oxfqO/ce13eca415.png)
+
+##1c.
+
+Some average run times from the system.
+
+![](http://puu.sh/oxfGE/1e04f40487.png)
+
+##1d.
+
+It gets rid of one of the human clerks, and adds in two new kiosks in parallel. The paths can be set to be equal lengths even though they aren't the same in the picute.
+
+![](http://puu.sh/oxfZy/fd9dbf8e2a.png)
+
+##2.
+
+Let's do it in R first.
+
+```{r}
+mm1 <- function (){
+dura   <- 1220 # duration of sim
+start <- 0 # start time
+inter <- 10 # interarrival time
+serv <- 7 # service time
+next.a <- 0 # next arrival
+next.d <- dura # next departure
+temp1 <- start # temps
+temp2 <- 0
+n <- 0
+s <- 0
+b <- 0
+c <- 0
+
+
+# run while clock hasn't reached completion
+  while (start < dura) {
+    if (next.a < next.d) { # arriving   
+      start <- next.a
+      s <- s + n * (start - temp1)
+      n <- n + 1
+      temp1 <- start
+      next.a <- start + rexp(1, 1/inter)
+      if(n == 1) { 
+        temp2 <- start
+        next.d <- start + rexp(1, 1/serv)
+      }
+    } else { # leaving         
+      start <- next.d
+      s <- s + n * (start - temp1)
+      n <- n - 1
+      temp1 <- start
+      c <- c + 1
+      if (n > 0) { 
+        next.d <- start + rexp(1, 1/serv)
+      } else { 
+        next.d <- dura
+        b <- b + start - temp2
+      }
+    } 
+  }
+return(c(b,c))
+}
+
+queue <- replicate(1000, mm1())
+paste('Utilization Rate:', mean(queue[1,] / 1220)) 
+paste('System Time:' , mean(queue[1,]/ mean(queue[2,] )), 'minutes')
+```
+
+And the Simio version:
+
+![](http://puu.sh/oxiWx/a3d1cff792.png)
+
+![](http://puu.sh/oxiXU/37c27a5fe8.png)
+
+
+##6.1
+
+arrival times = every 4 minutes
+
+service time = every 3 minutes
+
+atten pay = 10/hour
+
+mech pay = 15/hour
+
+With one attendant, lets find number of mechanics and then cost to run it:
+
+$$ \frac{1/4}{(1/3) - (1/4)} = 3 $$
+
+$$ 15(3) + 10 = 55 dollars $$
+
+With two attendants, we can use a MMc queue. I'll leave out some of the equations but it comes out to a cost of roughly 33 dollars instead of the above 55. This is due to there being less mechanics in use at any given time.
+
+##6.2
+
+We can use a MM1 queue in this case and come out with the equation:
+
+$$ 3 \leq \frac{lambda}{(2/3)(2/3 - lambda)} $$
+
+Solving this gives $lambda = 4/9$ and $lambda = 2/3$. From that, we can assume that rates lower than $lambda = 2/3$ will satisfy the problem.
